@@ -28,3 +28,12 @@ pub async fn create_part_repository(config: &Config) -> PartRepositoryImpl {
     let db_pool = Arc::new(postgres::db_connect(config).await);
     PartRepositoryImpl::new(db_pool.clone())
 }
+
+#[cfg(test)]
+pub async fn clear_database(config: &Config) {
+    let db_pool = Arc::new(postgres::db_connect(config).await);
+    sqlx::query("TRUNCATE TABLE parts, cars CASCADE")
+        .execute(&*db_pool)
+        .await
+        .expect("Failed to clear database tables");
+}

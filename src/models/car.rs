@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, FromRow, Debug, ToSchema)]
+#[derive(Serialize, Deserialize, FromRow, Debug, ToSchema, Clone)]
 pub struct Car {
     pub id: i32,
     pub name: String,
@@ -19,7 +19,7 @@ pub struct NewCar {
     pub year: Option<i16>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct CarQuery {
     pub name: Option<String>,
 }

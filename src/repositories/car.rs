@@ -86,3 +86,29 @@ impl CarRepository for CarRepositoryImpl {
         Ok(row)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mockall::predicate;
+    #[tokio::test]
+    async fn test_find_all_cars() {
+        let mut mock_repo = MockCarRepository::new();
+        let conditions = CarQuery { name: Some("Tesla".to_string()) };
+        let expected_cars = vec![
+            Car { id: 1, name: "Tesla Model S".to_string(), color: None, year: None },
+            Car { id: 2, name: "Tesla Model 3".to_string(), color: None, year: None },
+        ];
+
+        mock_repo.expect_find_all()
+            .with(predicate::eq(conditions.clone()))
+            .times(1)
+            .returning(move |_| Ok(expected_cars.clone()));
+
+        let result = mock_repo.find_all(&conditions).await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().len(), 2);
+    }
+
+
+}

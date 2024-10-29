@@ -1,0 +1,21 @@
+version: '2'
+services:
+  db:
+    image: postgres:17.0
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: softwaremill
+      POSTGRES_USER: softwaremill
+      POSTGRES_DB: wstemplatetest
+    ports:
+      - "5445:5432"
+  cache:
+    image: redis:latest
+    restart: always
+    ports:
+      - '6399:6379'
+    volumes:
+      - cache:/data
+volumes:
+  cache:
+    driver: local
