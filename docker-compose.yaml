@@ -1,0 +1,29 @@
+version: '2'
+services:
+  db:
+    image: postgres:17.0
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: softwaremill
+      POSTGRES_USER: softwaremill
+      POSTGRES_DB: wstemplate
+    ports:
+      - "5444:5432"
+    networks:
+      - mynetwork
+  cache:
+    image: redis:latest
+    restart: always
+    ports:
+      - '6389:6379'
+    volumes:
+      - cache:/data
+    networks:
+      - mynetwork
+volumes:
+  cache:
+    driver: local
+
+networks:
+  mynetwork:
+    driver: bridge
