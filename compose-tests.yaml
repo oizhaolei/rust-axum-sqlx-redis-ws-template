@@ -1,4 +1,3 @@
-version: '2'
 services:
   db:
     image: postgres:17.0
@@ -13,9 +12,12 @@ services:
     image: redis:latest
     restart: always
     ports:
-      - '6399:6379'
+      - "6399:6379"
     volumes:
-      - cache:/data
+      - type: volume
+        source: cache
+        target: /data
+
 volumes:
   cache:
     driver: local

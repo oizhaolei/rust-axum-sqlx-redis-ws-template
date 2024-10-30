@@ -110,7 +110,7 @@ pub async fn delete(Path(car_id): Path<i32>, Extension(repo): CarRepoExt) -> Res
 }
 
 // Example of end-to-end test with real database and repository
-// 1. run `docker-compose -f docker-compose-tests.yaml up -d` to start up the test db server
+// 1. run `docker-compose -f compose-tests.yaml up -d` to start up the test db server
 // 2. remove #[ignore] on the test method
 #[cfg(test)]
 mod tests {
