@@ -1,11 +1,11 @@
+use crate::cache::CacheExt;
+use crate::error::{AppError, AppJson};
 use crate::models::part::{NewPart, Part, PartList, PartQuery};
-use crate::repositories::{PartRepoExt};
-use axum::{extract::Extension, Json};
-use axum::extract::{Path, Query};
-use crate::cache::{CacheExt};
+use crate::repositories::PartRepoExt;
 use crate::router::PARTS_TAG;
 use crate::services;
-use crate::error::{AppError, AppJson};
+use axum::extract::{Path, Query};
+use axum::{Json, extract::Extension};
 
 /// List all available Parts
 ///
@@ -16,7 +16,10 @@ use crate::error::{AppError, AppJson};
     responses((status = OK, body = [Part])),
     tag = PARTS_TAG
 )]
-pub async fn index(Query(conditions): Query<PartQuery>, Extension(repo): PartRepoExt) -> Result<AppJson<PartList>, AppError> {
+pub async fn index(
+    Query(conditions): Query<PartQuery>,
+    Extension(repo): PartRepoExt,
+) -> Result<AppJson<PartList>, AppError> {
     let parts = services::parts::search(repo.clone(), &conditions).await?;
     Ok(AppJson(parts))
 }
@@ -33,8 +36,10 @@ pub async fn index(Query(conditions): Query<PartQuery>, Extension(repo): PartRep
             (status = 201, description = "Part item created successfully", body = Part)
         )
 )]
-pub async fn create(Extension(repo): PartRepoExt,
-                    Json(new_part): Json<NewPart>) -> Result<AppJson<Part>, AppError> {
+pub async fn create(
+    Extension(repo): PartRepoExt,
+    Json(new_part): Json<NewPart>,
+) -> Result<AppJson<Part>, AppError> {
     let part = services::parts::create(repo.clone(), &new_part).await?;
     Ok(AppJson(part))
 }
@@ -49,7 +54,11 @@ pub async fn create(Extension(repo): PartRepoExt,
     responses((status = OK, body = [Part])),
     tag = PARTS_TAG
 )]
-pub async fn view(Path(part_id): Path<i32>, Extension(repo): PartRepoExt, Extension(cache): CacheExt) -> Result<AppJson<Part>, AppError> {
+pub async fn view(
+    Path(part_id): Path<i32>,
+    Extension(repo): PartRepoExt,
+    Extension(cache): CacheExt,
+) -> Result<AppJson<Part>, AppError> {
     let part = services::parts::view(repo.clone(), cache.clone(), part_id).await?;
     Ok(AppJson(part))
 }
@@ -64,7 +73,10 @@ pub async fn view(Path(part_id): Path<i32>, Extension(repo): PartRepoExt, Extens
     responses((status = OK, body = [Part])),
     tag = PARTS_TAG
 )]
-pub async fn search(Query(params): Query<PartQuery>, Extension(repo): PartRepoExt) -> Result<AppJson<PartList>, AppError> {
+pub async fn search(
+    Query(params): Query<PartQuery>,
+    Extension(repo): PartRepoExt,
+) -> Result<AppJson<PartList>, AppError> {
     let parts = services::parts::search(repo.clone(), &params).await?;
     Ok(AppJson(parts))
 }
@@ -81,8 +93,10 @@ pub async fn search(Query(params): Query<PartQuery>, Extension(repo): PartRepoEx
             (status = 200, description = "Part item updated successfully", body = Part)
         )
 )]
-pub async fn update(Extension(repo): PartRepoExt,
-                    Json(part): Json<Part>) -> Result<AppJson<Part>, AppError> {
+pub async fn update(
+    Extension(repo): PartRepoExt,
+    Json(part): Json<Part>,
+) -> Result<AppJson<Part>, AppError> {
     let part = services::parts::update(repo.clone(), &part).await?;
     Ok(AppJson(part))
 }
@@ -99,7 +113,10 @@ pub async fn update(Extension(repo): PartRepoExt,
             (status = 200, description = "Part item deleted successfully", body = String)
         )
 )]
-pub async fn delete(Path(part_id): Path<i32>, Extension(repo): PartRepoExt) -> Result<(), AppError> {
+pub async fn delete(
+    Path(part_id): Path<i32>,
+    Extension(repo): PartRepoExt,
+) -> Result<(), AppError> {
     services::parts::delete(repo.clone(), part_id).await?;
     Ok(())
 }

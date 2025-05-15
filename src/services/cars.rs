@@ -1,22 +1,23 @@
-use crate::models::car::{NewCar, Car, CarQuery, CarList};
-use crate::repositories::{car::CarRepository};
-use std::sync::Arc;
-use anyhow::{bail, Result};
-use redis::AsyncCommands;
-use tracing::info;
 use crate::cache::CacheImpl;
+use crate::models::car::{Car, CarList, CarQuery, NewCar};
+use crate::repositories::car::CarRepository;
+use anyhow::{Result, bail};
+use redis::AsyncCommands;
+use std::sync::Arc;
+use tracing::info;
 
 const CAR_CACHE_TTL: u64 = 60;
 
-pub async fn search<R: CarRepository>(
-    repo: Arc<R>,
-    conditions: &CarQuery,
-) -> Result<CarList> {
+pub async fn search<R: CarRepository>(repo: Arc<R>, conditions: &CarQuery) -> Result<CarList> {
     let cars = repo.find_all(conditions).await?;
     Ok(cars)
 }
 
-pub async fn view<R: CarRepository>(repo: Arc<R>, cache: Arc<CacheImpl>, car_id: i32) -> Result<Car> {
+pub async fn view<R: CarRepository>(
+    repo: Arc<R>,
+    cache: Arc<CacheImpl>,
+    car_id: i32,
+) -> Result<Car> {
     // Construct the cache key
     let cache_key = format!("car:{}", car_id);
     let mut redis_conn = cache.redis_pool.get().await?;
@@ -37,7 +38,9 @@ pub async fn view<R: CarRepository>(repo: Arc<R>, cache: Arc<CacheImpl>, car_id:
     let car_json = serde_json::to_string(&car)?;
 
     // Store the serialized Car in the cache
-    redis_conn.set_ex::<_, _, ()>(&cache_key, car_json, CAR_CACHE_TTL).await?;
+    redis_conn
+        .set_ex::<_, _, ()>(&cache_key, car_json, CAR_CACHE_TTL)
+        .await?;
 
     Ok(car)
 }
@@ -64,9 +67,9 @@ pub async fn delete<R: CarRepository>(repo: Arc<R>, car_id: i32) -> Result<u64> 
 
 #[cfg(test)]
 mod tests {
-    use crate::repositories::car::MockCarRepository;
     use super::*;
-    use crate::tests::{fixture::car::cars_fixture};
+    use crate::repositories::car::MockCarRepository;
+    use crate::tests::fixture::car::cars_fixture;
 
     #[tokio::test]
     async fn test_search() {

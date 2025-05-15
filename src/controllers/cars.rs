@@ -1,13 +1,13 @@
-use crate::models::car::{NewCar, Car, CarQuery, CarList};
-use crate::repositories::{CarRepoExt};
+use crate::cache::CacheExt;
+use crate::error::{AppError, AppJson};
+use crate::models::car::{Car, CarList, CarQuery, NewCar};
+use crate::repositories::CarRepoExt;
+use crate::router::CARS_TAG;
 use crate::services;
 use axum::{
-    extract::{Extension, Path, Query},
     Json,
+    extract::{Extension, Path, Query},
 };
-use crate::cache::{CacheExt};
-use crate::error::{AppError, AppJson};
-use crate::router::CARS_TAG;
 
 /// List all available Cars
 ///
@@ -36,7 +36,10 @@ pub async fn list(
     responses((status = OK, body = [Car])),
     tag = CARS_TAG
 )]
-pub async fn search(Query(params): Query<CarQuery>, Extension(repo): CarRepoExt) -> Result<AppJson<CarList>, AppError> {
+pub async fn search(
+    Query(params): Query<CarQuery>,
+    Extension(repo): CarRepoExt,
+) -> Result<AppJson<CarList>, AppError> {
     let cars = services::cars::search(repo.clone(), &params).await?;
     Ok(AppJson(cars))
 }
@@ -51,7 +54,11 @@ pub async fn search(Query(params): Query<CarQuery>, Extension(repo): CarRepoExt)
     responses((status = OK, body = [Car])),
     tag = CARS_TAG
 )]
-pub async fn view(Path(car_id): Path<i32>, Extension(repo): CarRepoExt, Extension(cache): CacheExt) -> Result<AppJson<Car>, AppError> {
+pub async fn view(
+    Path(car_id): Path<i32>,
+    Extension(repo): CarRepoExt,
+    Extension(cache): CacheExt,
+) -> Result<AppJson<Car>, AppError> {
     let car = services::cars::view(repo.clone(), cache.clone(), car_id).await?;
     Ok(AppJson(car))
 }
@@ -68,8 +75,10 @@ pub async fn view(Path(car_id): Path<i32>, Extension(repo): CarRepoExt, Extensio
             (status = 201, description = "Car item created successfully", body = Car)
         )
 )]
-pub async fn create(Extension(repo): CarRepoExt,
-                    Json(new_car): Json<NewCar>) -> Result<AppJson<Car>, AppError> {
+pub async fn create(
+    Extension(repo): CarRepoExt,
+    Json(new_car): Json<NewCar>,
+) -> Result<AppJson<Car>, AppError> {
     let car = services::cars::create(repo.clone(), &new_car).await?;
     Ok(AppJson(car))
 }
@@ -86,8 +95,10 @@ pub async fn create(Extension(repo): CarRepoExt,
             (status = 200, description = "Car item updated successfully", body = Car)
         )
 )]
-pub async fn update(Extension(repo): CarRepoExt,
-                    Json(car): Json<Car>) -> Result<AppJson<Car>, AppError> {
+pub async fn update(
+    Extension(repo): CarRepoExt,
+    Json(car): Json<Car>,
+) -> Result<AppJson<Car>, AppError> {
     let car = services::cars::update(repo.clone(), &car).await?;
     Ok(AppJson(car))
 }
@@ -114,17 +125,17 @@ pub async fn delete(Path(car_id): Path<i32>, Extension(repo): CarRepoExt) -> Res
 // 2. remove #[ignore] on the test method
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-    use axum::{body::Body, http::StatusCode, Extension, Router};
-    use axum::http::Request;
-    use axum::routing::get;
-    use tower::ServiceExt;
-    use once_cell::sync::Lazy;
     use crate::config::Config;
     use crate::controllers::cars;
     use crate::models::car::{CarList, NewCar};
-    use crate::repositories::{clear_database, create_car_repository, run_migrations};
     use crate::repositories::car::CarRepository;
+    use crate::repositories::{clear_database, create_car_repository, run_migrations};
+    use axum::http::Request;
+    use axum::routing::get;
+    use axum::{Extension, Router, body::Body, http::StatusCode};
+    use once_cell::sync::Lazy;
+    use std::sync::Arc;
+    use tower::ServiceExt;
 
     static INIT: Lazy<()> = Lazy::new(|| {
         dotenv::from_filename(".env.test").ok();
@@ -163,15 +174,20 @@ mod tests {
         // Use `oneshot` to send a single request through the router
         let service = tower::ServiceBuilder::new().service(app);
         // when
-        let response = service.oneshot(request).await.expect("Failed to execute request");
+        let response = service
+            .oneshot(request)
+            .await
+            .expect("Failed to execute request");
 
         // then
         // Check the response status code
         assert_eq!(response.status(), StatusCode::OK);
         let max_body_size = 10 * 1024;
-        let response_body = axum::body::to_bytes(response.into_body(), max_body_size).await.expect("Failed to read body");
-        let cars: CarList = serde_json::from_slice(&response_body)
-            .expect("Failed to deserialize response");
+        let response_body = axum::body::to_bytes(response.into_body(), max_body_size)
+            .await
+            .expect("Failed to read body");
+        let cars: CarList =
+            serde_json::from_slice(&response_body).expect("Failed to deserialize response");
         assert_eq!(cars[0].name, "Tesla");
         assert_eq!(cars[0].color, Some("Red".to_string()));
         assert_eq!(cars[0].year, Some(2020));

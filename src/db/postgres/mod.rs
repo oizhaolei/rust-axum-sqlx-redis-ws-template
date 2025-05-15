@@ -1,7 +1,7 @@
-use dotenv::dotenv;
-use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
-use std::sync::Arc;
 use crate::config::Config;
+use dotenv::dotenv;
+use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
+use std::sync::Arc;
 
 pub type Db = Arc<Pool<Postgres>>;
 

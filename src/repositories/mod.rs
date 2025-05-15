@@ -1,14 +1,11 @@
+use crate::config::Config;
 use crate::db::postgres;
-use crate::repositories::{
-    part::{PartRepositoryImpl},
-    car::{CarRepositoryImpl},
-};
+use crate::repositories::{car::CarRepositoryImpl, part::PartRepositoryImpl};
 use axum::extract::Extension;
 use std::sync::Arc;
-use crate::config::Config;
 
-pub mod part;
 pub mod car;
+pub mod part;
 
 pub type CarRepoExt = Extension<Arc<CarRepositoryImpl>>;
 pub type PartRepoExt = Extension<Arc<PartRepositoryImpl>>;

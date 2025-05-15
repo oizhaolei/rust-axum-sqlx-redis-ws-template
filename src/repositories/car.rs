@@ -1,5 +1,5 @@
 use crate::db::postgres::Db;
-use crate::models::car::{NewCar, Car, CarQuery, CarList};
+use crate::models::car::{Car, CarList, CarQuery, NewCar};
 use anyhow::Result;
 use async_trait::async_trait;
 use mockall::automock;
@@ -26,14 +26,20 @@ pub trait CarRepository {
 #[async_trait]
 impl CarRepository for CarRepositoryImpl {
     async fn find_all(&self, conditions: &CarQuery) -> Result<CarList> {
-        let mut query = sqlx::query_as::<_, Car>("SELECT * FROM cars");
-        if let Some(name) = &conditions.name {
-            query = sqlx::query_as::<_, Car>("SELECT * FROM cars WHERE NAME LIKE $1")
-                .bind(format!("%{}%", name))
-        }
-        let result = query
+        let result = if let Some(name) = &conditions.name {
+            sqlx::query_as!(
+                Car,
+                "SELECT * FROM cars WHERE NAME LIKE $1",
+                format!("%{}%", name)
+            )
             .fetch_all(&*self.pool)
-            .await?;
+            .await?
+        } else {
+            sqlx::query_as!(Car, "SELECT * FROM cars")
+                .fetch_all(&*self.pool)
+                .await?
+        };
+
         Ok(result)
     }
 
@@ -45,11 +51,11 @@ impl CarRepository for CarRepositoryImpl {
             RETURNING id, name, color, year
             "#,
         )
-            .bind(&car_data.name)
-            .bind(&car_data.color)
-            .bind(car_data.year)
-            .fetch_one(&*self.pool)
-            .await?;
+        .bind(&car_data.name)
+        .bind(&car_data.color)
+        .bind(car_data.year)
+        .fetch_one(&*self.pool)
+        .await?;
         Ok(created_car)
     }
 
@@ -62,19 +68,20 @@ impl CarRepository for CarRepositoryImpl {
             RETURNING id, name, color, year
             "#,
         )
-            .bind(car_data.id)
-            .bind(&car_data.name)
-            .bind(&car_data.color)
-            .bind(car_data.year)
-            .fetch_one(&*self.pool)
-            .await?;
+        .bind(car_data.id)
+        .bind(&car_data.name)
+        .bind(&car_data.color)
+        .bind(car_data.year)
+        .fetch_one(&*self.pool)
+        .await?;
         Ok(updated_car)
     }
 
     async fn delete(&self, car_id: i32) -> Result<u64> {
         let query = sqlx::query("DELETE FROM cars WHERE id = $1")
             .bind(car_id)
-            .execute(&*self.pool).await?;
+            .execute(&*self.pool)
+            .await?;
         Ok(query.rows_affected())
     }
 
@@ -94,13 +101,26 @@ mod tests {
     #[tokio::test]
     async fn test_find_all_cars() {
         let mut mock_repo = MockCarRepository::new();
-        let conditions = CarQuery { name: Some("Tesla".to_string()) };
+        let conditions = CarQuery {
+            name: Some("Tesla".to_string()),
+        };
         let expected_cars = vec![
-            Car { id: 1, name: "Tesla Model S".to_string(), color: None, year: None },
-            Car { id: 2, name: "Tesla Model 3".to_string(), color: None, year: None },
+            Car {
+                id: 1,
+                name: "Tesla Model S".to_string(),
+                color: None,
+                year: None,
+            },
+            Car {
+                id: 2,
+                name: "Tesla Model 3".to_string(),
+                color: None,
+                year: None,
+            },
         ];
 
-        mock_repo.expect_find_all()
+        mock_repo
+            .expect_find_all()
             .with(predicate::eq(conditions.clone()))
             .times(1)
             .returning(move |_| Ok(expected_cars.clone()));
@@ -109,6 +129,4 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(result.unwrap().len(), 2);
     }
-
-
 }

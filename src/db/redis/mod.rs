@@ -1,8 +1,8 @@
-use std::sync::Arc;
-use bb8_redis::bb8::Pool;
-use bb8_redis::RedisConnectionManager;
-use dotenv::dotenv;
 use crate::config::Config;
+use bb8_redis::RedisConnectionManager;
+use bb8_redis::bb8::Pool;
+use dotenv::dotenv;
+use std::sync::Arc;
 
 pub type Redis = Arc<Pool<RedisConnectionManager>>;
 

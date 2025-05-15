@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use utoipa::ToSchema;
 
+#[serde_with::serde_as]
 #[derive(Serialize, Deserialize, FromRow, Debug, ToSchema, Clone)]
 pub struct Car {
     pub id: i32,

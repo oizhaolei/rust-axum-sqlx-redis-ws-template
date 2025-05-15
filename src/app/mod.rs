@@ -1,12 +1,12 @@
-use crate::repositories::{create_car_repository, create_part_repository, run_migrations};
-use crate::router::router;
-use axum::{Extension, Router};
-use std::sync::Arc;
-use axum::extract::{MatchedPath, Request};
-use tower_http::trace::TraceLayer;
-use tracing::{info_span};
 use crate::cache::create_cache;
 use crate::config::Config;
+use crate::repositories::{create_car_repository, create_part_repository, run_migrations};
+use crate::router::router;
+use axum::extract::{MatchedPath, Request};
+use axum::{Extension, Router};
+use std::sync::Arc;
+use tower_http::trace::TraceLayer;
+use tracing::info_span;
 
 pub async fn create_app(config: &Config) -> Router {
     let _ = run_migrations(config).await;

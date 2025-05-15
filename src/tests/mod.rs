@@ -1,6 +1,6 @@
 pub mod fixture;
 
-use axum::{body::Body, http::Request, response::Response, Router};
+use axum::{Router, body::Body, http::Request, response::Response};
 use tower::util::ServiceExt;
 
 pub async fn request(app: Router, url: &'static str, body: Body) -> Response {

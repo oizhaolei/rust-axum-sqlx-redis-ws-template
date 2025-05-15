@@ -1,24 +1,25 @@
-use std::sync::Arc;
-use bb8_redis::bb8::PooledConnection;
-use bb8_redis::RedisConnectionManager;
-use redis::AsyncCommands;
-use tracing::info;
 use crate::cache::CacheImpl;
 use crate::models::part::{NewPart, Part, PartList, PartQuery};
 use crate::repositories::part::PartRepository;
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
+use bb8_redis::RedisConnectionManager;
+use bb8_redis::bb8::PooledConnection;
+use redis::AsyncCommands;
+use std::sync::Arc;
+use tracing::info;
 
 const PART_CACHE_TTL: u64 = 60;
 
-pub async fn search<R: PartRepository>(
-    repo: Arc<R>,
-    conditions: &PartQuery,
-) -> Result<PartList> {
+pub async fn search<R: PartRepository>(repo: Arc<R>, conditions: &PartQuery) -> Result<PartList> {
     let parts = repo.find_all(conditions).await?;
     Ok(parts)
 }
 
-pub async fn view<R: PartRepository>(repo: Arc<R>, cache: Arc<CacheImpl>, part_id: i32) -> Result<Part> {
+pub async fn view<R: PartRepository>(
+    repo: Arc<R>,
+    cache: Arc<CacheImpl>,
+    part_id: i32,
+) -> Result<Part> {
     // Construct the cache key
     let cache_key = format!("part:{}", part_id);
     let mut redis_conn: PooledConnection<RedisConnectionManager> = cache.redis_pool.get().await?;
@@ -39,7 +40,9 @@ pub async fn view<R: PartRepository>(repo: Arc<R>, cache: Arc<CacheImpl>, part_i
     let part_json = serde_json::to_string(&part)?;
 
     // Store the serialized Part in the cache
-    redis_conn.set_ex::<_, _, ()>(&cache_key, part_json, PART_CACHE_TTL).await?;
+    redis_conn
+        .set_ex::<_, _, ()>(&cache_key, part_json, PART_CACHE_TTL)
+        .await?;
 
     Ok(part)
 }
@@ -64,12 +67,11 @@ pub async fn delete<R: PartRepository>(repo: Arc<R>, part_id: i32) -> Result<u64
     Ok(affected_rows)
 }
 
-
 #[cfg(test)]
 mod tests {
-    use crate::repositories::part::MockPartRepository;
     use super::*;
-    use crate::tests::{fixture::part::parts_fixture};
+    use crate::repositories::part::MockPartRepository;
+    use crate::tests::fixture::part::parts_fixture;
 
     #[tokio::test]
     async fn test_search() {

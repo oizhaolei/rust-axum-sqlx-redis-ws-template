@@ -1,8 +1,8 @@
 use crate::db::postgres::Db;
+use crate::models::part::{NewPart, Part, PartList, PartQuery};
 use anyhow::Result;
 use async_trait::async_trait;
 use mockall::automock;
-use crate::models::part::{NewPart, Part, PartList, PartQuery};
 
 pub struct PartRepositoryImpl {
     pool: Db,
@@ -31,9 +31,7 @@ impl PartRepository for PartRepositoryImpl {
             query = sqlx::query_as::<_, Part>("SELECT * FROM parts WHERE NAME LIKE $1")
                 .bind(format!("%{}%", name))
         }
-        let result = query
-            .fetch_all(&*self.pool)
-            .await?;
+        let result = query.fetch_all(&*self.pool).await?;
         Ok(result)
     }
 
@@ -45,10 +43,10 @@ impl PartRepository for PartRepositoryImpl {
             RETURNING id, name, car_id
             "#,
         )
-            .bind(&part_data.name)
-            .bind(part_data.car_id)
-            .fetch_one(&*self.pool)
-            .await?;
+        .bind(&part_data.name)
+        .bind(part_data.car_id)
+        .fetch_one(&*self.pool)
+        .await?;
         Ok(created_part)
     }
 
@@ -61,18 +59,19 @@ impl PartRepository for PartRepositoryImpl {
             RETURNING id, name, car_id
             "#,
         )
-            .bind(part_data.id)
-            .bind(&part_data.name)
-            .bind(part_data.car_id)
-            .fetch_one(&*self.pool)
-            .await?;
+        .bind(part_data.id)
+        .bind(&part_data.name)
+        .bind(part_data.car_id)
+        .fetch_one(&*self.pool)
+        .await?;
         Ok(updated_part)
     }
 
     async fn delete(&self, part_id: i32) -> Result<u64> {
         let query = sqlx::query("DELETE FROM parts WHERE id = $1")
             .bind(part_id)
-            .execute(&*self.pool).await?;
+            .execute(&*self.pool)
+            .await?;
         Ok(query.rows_affected())
     }
 

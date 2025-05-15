@@ -1,6 +1,4 @@
-
 use crate::error::{AppError, AppJson};
-
 
 /// Healthcheck endpoint
 ///

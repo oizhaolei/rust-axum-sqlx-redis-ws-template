@@ -1,23 +1,22 @@
-use std::net::SocketAddr;
+use crate::config::Config;
 use dotenv::dotenv;
+use std::net::SocketAddr;
 use tracing::{debug, info};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use crate::config::Config;
 
 mod app;
+mod cache;
+mod config;
 mod controllers;
 mod db;
 mod error;
 mod models;
 mod repositories;
-mod cache;
 mod router;
-mod config;
+mod services;
 #[cfg(test)]
 mod tests;
-mod services;
-
 
 #[tokio::main]
 async fn main() {
@@ -39,5 +38,7 @@ async fn main() {
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     debug!("listening on {addr}");
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app.into_make_service()).await.unwrap();
+    axum::serve(listener, app.into_make_service())
+        .await
+        .unwrap();
 }
