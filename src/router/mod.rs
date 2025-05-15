@@ -1,12 +1,14 @@
-use crate::controllers::{utils, parts, cars};
+use crate::controllers::{cars, parts, utils};
 use axum::Router;
+use tower_http::services::ServeDir;
+use tower_http::services::ServeFile;
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 use utoipa_rapidoc::RapiDoc;
-use utoipa_swagger_ui::SwaggerUi;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_scalar::{Scalar, Servable as ScalarServable};
+use utoipa_swagger_ui::SwaggerUi;
 
 pub const CARS_TAG: &str = "Cars";
 pub const PARTS_TAG: &str = "Parts";
@@ -35,7 +37,11 @@ pub fn router() -> Router {
         .merge(RapiDoc::new("/api-docs/openapi.json").path("/rapidoc"))
         // Alternative to above
         // .merge(RapiDoc::with_openapi("/api-docs/openapi2.json", api).path("/rapidoc"))
-        .merge(Scalar::with_url("/scalar", api));
+        .merge(Scalar::with_url("/scalar", api))
+        // host SPA assets
+        .fallback_service(
+            ServeDir::new("assets").not_found_service(ServeFile::new("assets/index.html")),
+        );
 
     Router::new().merge(router)
 }
