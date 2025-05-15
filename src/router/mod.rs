@@ -37,7 +37,7 @@ pub fn router() -> Router {
         // .merge(RapiDoc::with_openapi("/api-docs/openapi2.json", api).path("/rapidoc"))
         .merge(Scalar::with_url("/scalar", api));
 
-    Router::new().nest("/", router)
+    Router::new().merge(router)
 }
 
 fn car_routes() -> OpenApiRouter {
