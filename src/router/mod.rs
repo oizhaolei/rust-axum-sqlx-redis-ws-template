@@ -25,6 +25,7 @@ struct ApiDoc;
 pub fn router() -> Router {
     let app = OpenApiRouter::new()
         .routes(routes!(utils::healthcheck))
+        .routes(routes!(utils::save_request_body))
         .nest("/users", user_routes())
         .nest("/cars", car_routes())
         .nest("/parts", part_routes());
