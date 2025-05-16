@@ -12,6 +12,7 @@ mod controllers;
 mod db;
 mod error;
 mod models;
+mod password;
 mod repositories;
 mod router;
 mod services;

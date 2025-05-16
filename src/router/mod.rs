@@ -1,4 +1,4 @@
-use crate::controllers::{cars, parts, utils};
+use crate::controllers::{cars, parts, users, utils};
 use axum::Router;
 use tower_http::services::ServeDir;
 use tower_http::services::ServeFile;
@@ -10,11 +10,13 @@ use utoipa_redoc::{Redoc, Servable};
 use utoipa_scalar::{Scalar, Servable as ScalarServable};
 use utoipa_swagger_ui::SwaggerUi;
 
+pub const USERS_TAG: &str = "Users";
 pub const CARS_TAG: &str = "Cars";
 pub const PARTS_TAG: &str = "Parts";
 #[derive(OpenApi)]
 #[openapi(
     tags(
+        (name = USERS_TAG, description = "Users management API"),
         (name = CARS_TAG, description = "Cars management API"),
         (name = PARTS_TAG, description = "Parts management API")
     )
@@ -23,6 +25,7 @@ struct ApiDoc;
 pub fn router() -> Router {
     let app = OpenApiRouter::new()
         .routes(routes!(utils::healthcheck))
+        .nest("/users", user_routes())
         .nest("/cars", car_routes())
         .nest("/parts", part_routes());
 
@@ -44,6 +47,17 @@ pub fn router() -> Router {
         );
 
     Router::new().merge(router)
+}
+
+fn user_routes() -> OpenApiRouter {
+    OpenApiRouter::new()
+        .routes(routes!(users::list))
+        .routes(routes!(users::search))
+        .routes(routes!(users::create))
+        .routes(routes!(users::view))
+        .routes(routes!(users::update))
+        .routes(routes!(users::delete))
+        .routes(routes!(users::login))
 }
 
 fn car_routes() -> OpenApiRouter {

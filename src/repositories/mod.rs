@@ -1,12 +1,16 @@
 use crate::config::Config;
 use crate::db::postgres;
-use crate::repositories::{car::CarRepositoryImpl, part::PartRepositoryImpl};
+use crate::repositories::{
+    car::CarRepositoryImpl, part::PartRepositoryImpl, user::UserRepositoryImpl,
+};
 use axum::extract::Extension;
 use std::sync::Arc;
 
 pub mod car;
 pub mod part;
+pub mod user;
 
+pub type UserRepoExt = Extension<Arc<UserRepositoryImpl>>;
 pub type CarRepoExt = Extension<Arc<CarRepositoryImpl>>;
 pub type PartRepoExt = Extension<Arc<PartRepositoryImpl>>;
 
@@ -16,6 +20,12 @@ pub async fn run_migrations(config: &Config) {
         panic!("Failed to run database migrations: {:?}", e);
     }
 }
+
+pub async fn create_user_repository(config: &Config) -> UserRepositoryImpl {
+    let db_pool = Arc::new(postgres::db_connect(config).await);
+    UserRepositoryImpl::new(db_pool.clone())
+}
+
 pub async fn create_car_repository(config: &Config) -> CarRepositoryImpl {
     let db_pool = Arc::new(postgres::db_connect(config).await);
     CarRepositoryImpl::new(db_pool.clone())
@@ -29,7 +39,7 @@ pub async fn create_part_repository(config: &Config) -> PartRepositoryImpl {
 #[cfg(test)]
 pub async fn clear_database(config: &Config) {
     let db_pool = Arc::new(postgres::db_connect(config).await);
-    sqlx::query("TRUNCATE TABLE parts, cars CASCADE")
+    sqlx::query("TRUNCATE TABLE parts, cars, users CASCADE")
         .execute(&*db_pool)
         .await
         .expect("Failed to clear database tables");

@@ -1,5 +1,6 @@
 pub mod cars;
 pub mod parts;
+pub mod users;
 pub mod utils;
 
 #[cfg(test)]

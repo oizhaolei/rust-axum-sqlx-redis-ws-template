@@ -86,8 +86,7 @@ impl CarRepository for CarRepositoryImpl {
     }
 
     async fn find_by_id(&self, car_id: i32) -> Result<Car> {
-        let row = sqlx::query_as::<_, Car>("SELECT * FROM cars WHERE id = $1")
-            .bind(car_id)
+        let row = sqlx::query_as!(Car, "SELECT * FROM cars WHERE id = $1", car_id)
             .fetch_one(&*self.pool)
             .await?;
         Ok(row)
