@@ -50,12 +50,32 @@ pub async fn create<R: CarRepository>(repo: Arc<R>, new_car: &NewCar) -> Result<
     Ok(car)
 }
 
-pub async fn update<R: CarRepository>(repo: Arc<R>, car: &Car) -> Result<Car> {
+pub async fn update<R: CarRepository>(
+    repo: Arc<R>,
+    cache: Arc<CacheImpl>,
+    car: &Car,
+) -> Result<Car> {
+    // Construct the cache key
+    let cache_key = format!("car:{}", car.id);
+    let mut redis_conn = cache.redis_pool.get().await?;
+    // Attempt to retrieve the car data from cache
+    let _: Option<String> = redis_conn.del::<String, _>(cache_key.clone()).await?;
+
     let car = repo.update(car).await?;
     Ok(car)
 }
 
-pub async fn delete<R: CarRepository>(repo: Arc<R>, car_id: i32) -> Result<u64> {
+pub async fn delete<R: CarRepository>(
+    repo: Arc<R>,
+    cache: Arc<CacheImpl>,
+    car_id: i32,
+) -> Result<u64> {
+    // Construct the cache key
+    let cache_key = format!("car:{}", car_id);
+    let mut redis_conn = cache.redis_pool.get().await?;
+    // Attempt to retrieve the car data from cache
+    let _: Option<String> = redis_conn.del::<String, _>(cache_key.clone()).await?;
+
     let affected_rows = repo.delete(car_id).await?;
     if affected_rows == 0 {
         bail!("No rows affected, car with ID {} not found", car_id);

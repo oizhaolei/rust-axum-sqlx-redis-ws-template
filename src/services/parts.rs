@@ -52,12 +52,32 @@ pub async fn create<R: PartRepository>(repo: Arc<R>, new_part: &NewPart) -> Resu
     Ok(part)
 }
 
-pub async fn update<R: PartRepository>(repo: Arc<R>, part: &Part) -> Result<Part> {
+pub async fn update<R: PartRepository>(
+    repo: Arc<R>,
+    cache: Arc<CacheImpl>,
+    part: &Part,
+) -> Result<Part> {
+    // Construct the cache key
+    let cache_key = format!("part:{}", part.id);
+    let mut redis_conn: PooledConnection<RedisConnectionManager> = cache.redis_pool.get().await?;
+    // Attempt to retrieve the part data from cache
+    let _: Option<String> = redis_conn.del::<String, _>(cache_key.clone()).await?;
+
     let part = repo.update(part).await?;
     Ok(part)
 }
 
-pub async fn delete<R: PartRepository>(repo: Arc<R>, part_id: i32) -> Result<u64> {
+pub async fn delete<R: PartRepository>(
+    repo: Arc<R>,
+    cache: Arc<CacheImpl>,
+    part_id: i32,
+) -> Result<u64> {
+    // Construct the cache key
+    let cache_key = format!("part:{}", part_id);
+    let mut redis_conn: PooledConnection<RedisConnectionManager> = cache.redis_pool.get().await?;
+    // Attempt to retrieve the part data from cache
+    let _: Option<String> = redis_conn.del::<String, _>(cache_key.clone()).await?;
+
     let affected_rows = repo.delete(part_id).await?;
     if affected_rows == 0 {
         bail!("No rows affected, part with ID {} not found", part_id);

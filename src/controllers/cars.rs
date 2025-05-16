@@ -97,9 +97,10 @@ pub async fn create(
 )]
 pub async fn update(
     Extension(repo): CarRepoExt,
+    Extension(cache): CacheExt,
     Json(car): Json<Car>,
 ) -> Result<AppJson<Car>, AppError> {
-    let car = services::cars::update(repo.clone(), &car).await?;
+    let car = services::cars::update(repo.clone(), cache, &car).await?;
     Ok(AppJson(car))
 }
 
@@ -115,8 +116,12 @@ pub async fn update(
             (status = 200, description = "Car item deleted successfully", body = String)
         )
 )]
-pub async fn delete(Path(car_id): Path<i32>, Extension(repo): CarRepoExt) -> Result<(), AppError> {
-    services::cars::delete(repo.clone(), car_id).await?;
+pub async fn delete(
+    Path(car_id): Path<i32>,
+    Extension(repo): CarRepoExt,
+    Extension(cache): CacheExt,
+) -> Result<(), AppError> {
+    services::cars::delete(repo.clone(), cache, car_id).await?;
     Ok(())
 }
 

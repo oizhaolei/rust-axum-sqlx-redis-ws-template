@@ -4,7 +4,7 @@ use crate::models::part::Part;
 pub fn part_fixture(id: usize) -> Part {
     Part {
         id: id as i32,
-        car_id: 1,
+        car_id: Some(1),
         name: String::from("alternator"),
     }
 }

@@ -95,9 +95,10 @@ pub async fn search(
 )]
 pub async fn update(
     Extension(repo): PartRepoExt,
+    Extension(cache): CacheExt,
     Json(part): Json<Part>,
 ) -> Result<AppJson<Part>, AppError> {
-    let part = services::parts::update(repo.clone(), &part).await?;
+    let part = services::parts::update(repo.clone(), cache, &part).await?;
     Ok(AppJson(part))
 }
 
@@ -116,7 +117,8 @@ pub async fn update(
 pub async fn delete(
     Path(part_id): Path<i32>,
     Extension(repo): PartRepoExt,
+    Extension(cache): CacheExt,
 ) -> Result<(), AppError> {
-    services::parts::delete(repo.clone(), part_id).await?;
+    services::parts::delete(repo.clone(), cache, part_id).await?;
     Ok(())
 }

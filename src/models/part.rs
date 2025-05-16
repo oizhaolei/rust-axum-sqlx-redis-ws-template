@@ -1,10 +1,11 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
+#[serde_with::serde_as]
 #[derive(Serialize, Deserialize, sqlx::FromRow, Debug, ToSchema)]
 pub struct Part {
     pub id: i32,
-    pub car_id: i32,
+    pub car_id: Option<i32>,
     pub name: String,
 }
 

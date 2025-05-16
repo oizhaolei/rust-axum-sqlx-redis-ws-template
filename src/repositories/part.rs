@@ -26,42 +26,52 @@ pub trait PartRepository {
 #[async_trait]
 impl PartRepository for PartRepositoryImpl {
     async fn find_all(&self, conditions: &PartQuery) -> Result<PartList> {
-        let mut query = sqlx::query_as::<_, Part>("SELECT * FROM parts");
-        if let Some(name) = &conditions.name {
-            query = sqlx::query_as::<_, Part>("SELECT * FROM parts WHERE NAME LIKE $1")
-                .bind(format!("%{}%", name))
-        }
-        let result = query.fetch_all(&*self.pool).await?;
+        let result = if let Some(name) = &conditions.name {
+            sqlx::query_as!(
+                Part,
+                "SELECT * FROM parts WHERE NAME LIKE $1",
+                format!("%{}%", name)
+            )
+            .fetch_all(&*self.pool)
+            .await?
+        } else {
+            sqlx::query_as!(Part, "SELECT * FROM parts")
+                .fetch_all(&*self.pool)
+                .await?
+        };
+
         Ok(result)
     }
 
     async fn create(&self, part_data: &NewPart) -> Result<Part> {
-        let created_part = sqlx::query_as::<_, Part>(
+        let created_part = sqlx::query_as!(
+            Part,
             r#"
             INSERT INTO parts (name, car_id)
             VALUES ($1, $2)
             RETURNING id, name, car_id
             "#,
+            &part_data.name,
+            part_data.car_id,
         )
-        .bind(&part_data.name)
-        .bind(part_data.car_id)
         .fetch_one(&*self.pool)
         .await?;
         Ok(created_part)
     }
 
     async fn update(&self, part_data: &Part) -> Result<Part> {
-        let updated_part = sqlx::query_as::<_, Part>(
+        let updated_part = sqlx::query_as!(
+            Part,
             r#"
             UPDATE parts
             SET name = $2, car_id = $3
             WHERE id = $1
             RETURNING id, name, car_id
             "#,
+            part_data.id,
+            &part_data.name,
+            part_data.car_id,
         )
-        .bind(part_data.id)
-        .bind(&part_data.name)
-        .bind(part_data.car_id)
         .fetch_one(&*self.pool)
         .await?;
         Ok(updated_part)
@@ -76,8 +86,7 @@ impl PartRepository for PartRepositoryImpl {
     }
 
     async fn find_by_id(&self, part_id: i32) -> Result<Part> {
-        let row = sqlx::query_as::<_, Part>("SELECT * FROM parts WHERE id = $1")
-            .bind(part_id)
+        let row = sqlx::query_as!(Part, "SELECT * FROM parts WHERE id = $1", part_id,)
             .fetch_one(&*self.pool)
             .await?;
         Ok(row)
