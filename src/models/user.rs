@@ -19,7 +19,7 @@ pub struct User {
 pub type UserList = Vec<User>;
 
 #[derive(Serialize, Deserialize, Debug, ToSchema, Validate)]
-pub struct NewUser {
+pub struct UserAuth {
     #[validate(length(min = 3, max = 16),regex(path = *USERNAME_REGEX))]
     pub username: String,
     #[validate(length(min = 8, max = 32))]

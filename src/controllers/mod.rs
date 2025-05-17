@@ -1,3 +1,4 @@
+pub mod auth;
 pub mod cars;
 pub mod parts;
 pub mod users;

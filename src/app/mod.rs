@@ -12,10 +12,12 @@ use tracing::info_span;
 
 pub async fn create_app(config: &Config) -> Router {
     let _ = run_migrations(config).await;
+
     let user_repository = Arc::new(create_user_repository(config).await);
     let car_repository = Arc::new(create_car_repository(config).await);
     let part_repository = Arc::new(create_part_repository(config).await);
     let cache = Arc::new(create_cache(config).await);
+
     router()
         .layer(
             TraceLayer::new_for_http()

@@ -7,6 +7,8 @@ use crate::services;
 use axum::extract::{Path, Query};
 use axum::{Json, extract::Extension};
 
+use super::auth::Claims;
+
 /// List all available Parts
 ///
 /// Tries to all Parts from the database.
@@ -31,12 +33,16 @@ pub async fn index(
         post,
         path = "/create",
         tag = PARTS_TAG,
+        security(
+            ("bearerAuth" = [])
+        ),
         request_body(content=String, content_type="application/json", description="New Part Information"),
         responses(
             (status = 201, description = "Part item created successfully", body = Part)
         )
 )]
 pub async fn create(
+    _claims: Claims,
     Extension(repo): PartRepoExt,
     Json(new_part): Json<NewPart>,
 ) -> Result<AppJson<Part>, AppError> {
@@ -55,6 +61,7 @@ pub async fn create(
     tag = PARTS_TAG
 )]
 pub async fn view(
+    _claims: Claims,
     Path(part_id): Path<i32>,
     Extension(repo): PartRepoExt,
     Extension(cache): CacheExt,
@@ -88,12 +95,16 @@ pub async fn search(
         post,
         path = "/update",
         tag = PARTS_TAG,
+        security(
+            ("bearerAuth" = [])
+        ),
         request_body(content=Part, content_type="application/json", description="Part To Update"),
         responses(
             (status = 200, description = "Part item updated successfully", body = Part)
         )
 )]
 pub async fn update(
+    _claims: Claims,
     Extension(repo): PartRepoExt,
     Extension(cache): CacheExt,
     Json(part): Json<Part>,
@@ -110,11 +121,15 @@ pub async fn update(
         path = "/delete/{part_id}",
         params(("part_id" = i32, Path, description="Part Id")),
         tag = PARTS_TAG,
+        security(
+            ("bearerAuth" = [])
+        ),
         responses(
             (status = 200, description = "Part item deleted successfully", body = String)
         )
 )]
 pub async fn delete(
+    _claims: Claims,
     Path(part_id): Path<i32>,
     Extension(repo): PartRepoExt,
     Extension(cache): CacheExt,

@@ -1,5 +1,5 @@
 use crate::db::postgres::Db;
-use crate::models::user::{NewUser, User, UserList, UserQuery};
+use crate::models::user::{User, UserAuth, UserList, UserQuery};
 use crate::password;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -18,8 +18,8 @@ impl UserRepositoryImpl {
 #[async_trait]
 pub trait UserRepository {
     async fn find_all(&self, conditions: &UserQuery) -> Result<UserList>;
-    async fn create(&self, user_data: &NewUser) -> Result<User>;
-    async fn update(&self, user_data: &NewUser) -> Result<User>;
+    async fn create(&self, user_data: &UserAuth) -> Result<User>;
+    async fn update(&self, user_data: &UserAuth) -> Result<User>;
     async fn delete(&self, username: &str) -> Result<u64>;
     async fn find_by_username(&self, username: &str) -> Result<User>;
 }
@@ -44,7 +44,7 @@ impl UserRepository for UserRepositoryImpl {
         Ok(result)
     }
 
-    async fn create(&self, user_data: &NewUser) -> Result<User> {
+    async fn create(&self, user_data: &UserAuth) -> Result<User> {
         let password_hash = password::hash(user_data.password.to_string()).await?;
 
         let created_user = sqlx::query_as::<_, User>(
@@ -61,7 +61,7 @@ impl UserRepository for UserRepositoryImpl {
         Ok(created_user)
     }
 
-    async fn update(&self, user_data: &NewUser) -> Result<User> {
+    async fn update(&self, user_data: &UserAuth) -> Result<User> {
         let password_hash = password::hash(user_data.password.to_string()).await?;
         let updated_user = sqlx::query_as::<_, User>(
             r#"

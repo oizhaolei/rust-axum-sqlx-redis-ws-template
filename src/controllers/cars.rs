@@ -9,6 +9,8 @@ use axum::{
     extract::{Extension, Path, Query},
 };
 
+use super::auth::Claims;
+
 /// List all available Cars
 ///
 /// Tries to all Cars from the database.
@@ -55,6 +57,7 @@ pub async fn search(
     tag = CARS_TAG
 )]
 pub async fn view(
+    _claims: Claims,
     Path(car_id): Path<i32>,
     Extension(repo): CarRepoExt,
     Extension(cache): CacheExt,
@@ -70,12 +73,16 @@ pub async fn view(
         post,
         path = "/create",
         tag = CARS_TAG,
+        security(
+            ("bearerAuth" = [])
+        ),
         request_body(content=NewCar, content_type="application/json", description="New Car Information"),
         responses(
             (status = 201, description = "Car item created successfully", body = Car)
         )
 )]
 pub async fn create(
+    _claims: Claims,
     Extension(repo): CarRepoExt,
     Json(new_car): Json<NewCar>,
 ) -> Result<AppJson<Car>, AppError> {
@@ -90,12 +97,16 @@ pub async fn create(
         post,
         path = "/update",
         tag = CARS_TAG,
+        security(
+            ("bearerAuth" = [])
+        ),
         request_body(content=Car, content_type="application/json", description="Car To Update"),
         responses(
             (status = 200, description = "Car item updated successfully", body = Car)
         )
 )]
 pub async fn update(
+    _claims: Claims,
     Extension(repo): CarRepoExt,
     Extension(cache): CacheExt,
     Json(car): Json<Car>,
@@ -112,11 +123,15 @@ pub async fn update(
         path = "/delete/{car_id}",
         params(("car_id" = i32, Path, description="Car Id")),
         tag = CARS_TAG,
+        security(
+            ("bearerAuth" = [])
+        ),
         responses(
             (status = 200, description = "Car item deleted successfully", body = String)
         )
 )]
 pub async fn delete(
+    _claims: Claims,
     Path(car_id): Path<i32>,
     Extension(repo): CarRepoExt,
     Extension(cache): CacheExt,

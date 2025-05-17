@@ -1,6 +1,6 @@
-use crate::models::user::{NewUser, User, UserList, UserQuery};
+use crate::models::user::{User, UserAuth, UserList, UserQuery};
 use crate::repositories::user::UserRepository;
-use anyhow::{Result, anyhow, bail};
+use anyhow::{Result, bail};
 use std::sync::Arc;
 use tracing::info;
 
@@ -17,24 +17,28 @@ pub async fn view<R: UserRepository>(repo: Arc<R>, username: &str) -> Result<Use
     Ok(user)
 }
 
-pub async fn create<R: UserRepository>(repo: Arc<R>, new_user: &NewUser) -> Result<User> {
+pub async fn create<R: UserRepository>(repo: Arc<R>, new_user: &UserAuth) -> Result<User> {
     let user = repo.create(new_user).await?;
     Ok(user)
 }
 
-pub async fn update<R: UserRepository>(repo: Arc<R>, user: &NewUser) -> Result<User> {
+pub async fn update<R: UserRepository>(repo: Arc<R>, user: &UserAuth) -> Result<User> {
     let user = repo.update(user).await?;
     Ok(user)
 }
 
-pub async fn login<R: UserRepository>(repo: Arc<R>, user: &NewUser) -> Result<User> {
+pub async fn login<R: UserRepository>(repo: Arc<R>, user: &UserAuth) -> Result<User> {
+    // Check if the user sent the credentials
+    if user.username.is_empty() || user.password.is_empty() {
+        anyhow::bail!("MissingCredentials");
+    }
+
     let db_user = repo.find_by_username(&user.username).await?;
     //verrify
     let verified =
         crate::password::verify(user.password.clone(), db_user.password_hash.to_string()).await?;
-    println!("verified: {}", verified);
     if !verified {
-        return Err(anyhow!("invalid password"));
+        bail!("invalid login {} / {}", &user.username, &user.password);
     }
 
     Ok(db_user)

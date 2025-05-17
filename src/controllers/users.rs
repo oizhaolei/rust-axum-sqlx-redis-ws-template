@@ -1,5 +1,5 @@
 use crate::error::{AppError, AppJson};
-use crate::models::user::{NewUser, User, UserList, UserQuery};
+use crate::models::user::{User, UserAuth, UserList, UserQuery};
 use crate::repositories::UserRepoExt;
 use crate::router::USERS_TAG;
 use crate::services;
@@ -8,6 +8,8 @@ use axum::{
     extract::{Extension, Path, Query},
 };
 
+use super::auth::Claims;
+
 /// List all available Users
 ///
 /// Tries to all Users from the database.
@@ -15,9 +17,13 @@ use axum::{
     get,
     path = "/list",
     responses((status = OK, body = [User])),
+    security(
+        ("bearerAuth" = [])
+    ),
     tag = USERS_TAG
 )]
 pub async fn list(
+    _claims: Claims,
     Query(conditions): Query<UserQuery>,
     Extension(repo): UserRepoExt,
 ) -> Result<AppJson<UserList>, AppError> {
@@ -33,9 +39,13 @@ pub async fn list(
     path = "/search",
     params(("username" = String, Query, description="User Name")),
     responses((status = OK, body = [User])),
+    security(
+        ("bearerAuth" = [])
+    ),
     tag = USERS_TAG
 )]
 pub async fn search(
+    _claims: Claims,
     Query(params): Query<UserQuery>,
     Extension(repo): UserRepoExt,
 ) -> Result<AppJson<UserList>, AppError> {
@@ -51,9 +61,13 @@ pub async fn search(
     path = "/{username}",
     params(("username" =&str, Path, description="User Id")),
     responses((status = OK, body = [User])),
+    security(
+        ("bearerAuth" = [])
+    ),
     tag = USERS_TAG
 )]
 pub async fn view(
+    _claims: Claims,
     Path(username): Path<String>,
     Extension(repo): UserRepoExt,
 ) -> Result<AppJson<User>, AppError> {
@@ -67,15 +81,19 @@ pub async fn view(
 #[utoipa::path(
         post,
         path = "/create",
+        security(
+            ("bearerAuth" = [])
+        ),
         tag = USERS_TAG,
-        request_body(content=NewUser, content_type="application/json", description="New User Information"),
+        request_body(content=UserAuth, content_type="application/json", description="New User Information"),
         responses(
             (status = 201, description = "User item created successfully", body = User)
         )
 )]
 pub async fn create(
+    _claims: Claims,
     Extension(repo): UserRepoExt,
-    Json(new_user): Json<NewUser>,
+    Json(new_user): Json<UserAuth>,
 ) -> Result<AppJson<User>, AppError> {
     let user = services::users::create(repo.clone(), &new_user).await?;
     Ok(AppJson(user))
@@ -87,6 +105,9 @@ pub async fn create(
 #[utoipa::path(
         post,
         path = "/update",
+        security(
+            ("bearerAuth" = [])
+        ),
         tag = USERS_TAG,
         request_body(content=User, content_type="application/json", description="User To Update"),
         responses(
@@ -94,8 +115,9 @@ pub async fn create(
         )
 )]
 pub async fn update(
+    _claims: Claims,
     Extension(repo): UserRepoExt,
-    Json(user): Json<NewUser>,
+    Json(user): Json<UserAuth>,
 ) -> Result<AppJson<User>, AppError> {
     let user = services::users::update(repo.clone(), &user).await?;
     Ok(AppJson(user))
@@ -108,37 +130,21 @@ pub async fn update(
         delete,
         path = "/delete/{username}",
         params(("username" = String, Path, description="User Id")),
+        security(
+            ("bearerAuth" = [])
+        ),
         tag = USERS_TAG,
         responses(
             (status = 200, description = "User item deleted successfully", body = String)
         )
 )]
 pub async fn delete(
+    _claims: Claims,
     Path(username): Path<String>,
     Extension(repo): UserRepoExt,
 ) -> Result<(), AppError> {
     services::users::delete(repo.clone(), &username).await?;
     Ok(())
-}
-
-/// Login with username and password
-///
-/// Tries to login via a User in the database.
-#[utoipa::path(
-        post,
-        path = "/login",
-        tag = USERS_TAG,
-        request_body(content=NewUser, content_type="application/json", description="login"),
-        responses(
-            (status = 200, description = "User login successfully", body = User)
-        )
-)]
-pub async fn login(
-    Extension(repo): UserRepoExt,
-    Json(user): Json<NewUser>,
-) -> Result<AppJson<User>, AppError> {
-    let user = services::users::login(repo.clone(), &user).await?;
-    Ok(AppJson(user))
 }
 
 // Example of end-to-end test with real database and repository
@@ -148,7 +154,7 @@ pub async fn login(
 mod tests {
     use crate::config::Config;
     use crate::controllers::users;
-    use crate::models::user::{NewUser, UserList};
+    use crate::models::user::{UserAuth, UserList};
     use crate::repositories::user::UserRepository;
     use crate::repositories::{clear_database, create_user_repository, run_migrations};
     use axum::http::Request;
@@ -173,7 +179,7 @@ mod tests {
         let real_repo = create_user_repository(&config).await;
 
         // given
-        let user = NewUser {
+        let user = UserAuth {
             username: "Tesla".to_string(),
             password: "Red".to_string(),
         };
