@@ -3,6 +3,7 @@ use crate::repositories::user::UserRepository;
 use anyhow::{Result, bail};
 use std::sync::Arc;
 use tracing::info;
+use validator::Validate;
 
 pub async fn search<R: UserRepository>(repo: Arc<R>, conditions: &UserQuery) -> Result<UserList> {
     let users = repo.find_all(conditions).await?;
@@ -18,6 +19,7 @@ pub async fn view<R: UserRepository>(repo: Arc<R>, username: &str) -> Result<Use
 }
 
 pub async fn create<R: UserRepository>(repo: Arc<R>, new_user: &UserAuth) -> Result<User> {
+    new_user.validate()?;
     let user = repo.create(new_user).await?;
     Ok(user)
 }

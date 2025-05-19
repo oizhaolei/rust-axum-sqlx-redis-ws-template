@@ -7,6 +7,7 @@ use bb8_redis::bb8::PooledConnection;
 use redis::AsyncCommands;
 use std::sync::Arc;
 use tracing::info;
+use validator::Validate;
 
 const PART_CACHE_TTL: u64 = 60;
 
@@ -48,6 +49,7 @@ pub async fn view<R: PartRepository>(
 }
 
 pub async fn create<R: PartRepository>(repo: Arc<R>, new_part: &NewPart) -> Result<Part> {
+    new_part.validate()?;
     let part = repo.create(new_part).await?;
     Ok(part)
 }

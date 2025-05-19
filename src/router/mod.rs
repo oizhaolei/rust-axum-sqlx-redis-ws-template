@@ -32,6 +32,9 @@ impl Modify for SecurityAddon {
 #[derive(OpenApi)]
 #[openapi(
     modifiers(&SecurityAddon),
+    servers(
+        (url="http://localhost:3000")
+    ),
     tags(
         (name = AUTH_TAG, description = "Auth management API"),
         (name = USERS_TAG, description = "Users management API"),
@@ -91,7 +94,7 @@ fn car_routes() -> OpenApiRouter {
 
 fn part_routes() -> OpenApiRouter {
     OpenApiRouter::new()
-        .routes(routes!(parts::index))
+        .routes(routes!(parts::list))
         .routes(routes!(parts::search))
         .routes(routes!(parts::create))
         .routes(routes!(parts::view))

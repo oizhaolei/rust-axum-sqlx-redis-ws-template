@@ -9,11 +9,12 @@ use axum::extract::{MatchedPath, Request};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use axum::{Extension, Router, middleware};
+use http_body_util::BodyExt;
 use hyper::StatusCode;
 use std::sync::Arc;
+use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing::info_span;
-use http_body_util::BodyExt;
 
 pub async fn create_app(config: &Config) -> Router {
     let _ = run_migrations(config).await;
@@ -22,6 +23,14 @@ pub async fn create_app(config: &Config) -> Router {
     let car_repository = Arc::new(create_car_repository(config).await);
     let part_repository = Arc::new(create_part_repository(config).await);
     let cache = Arc::new(create_cache(config).await);
+
+    let allow_origins = [
+        "http://127.0.0.1:3000".parse().unwrap(),
+        "http://localhost:3000".parse().unwrap(),
+        "http://localhost:8000".parse().unwrap(),
+        "http://localhost:8080".parse().unwrap(),
+        "http://localhost:5173".parse().unwrap(),
+    ];
 
     router()
         .layer(
@@ -45,6 +54,12 @@ pub async fn create_app(config: &Config) -> Router {
                 .on_failure(()),
         )
         .layer(middleware::from_fn(print_request_body))
+        .layer(
+            CorsLayer::new()
+                .allow_origin(allow_origins)
+                .allow_headers(Any)
+                .allow_methods(Any),
+        )
         .layer(Extension(user_repository))
         .layer(Extension(car_repository))
         .layer(Extension(part_repository))

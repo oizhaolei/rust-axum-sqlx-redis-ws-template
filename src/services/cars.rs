@@ -5,6 +5,7 @@ use anyhow::{Result, bail};
 use redis::AsyncCommands;
 use std::sync::Arc;
 use tracing::info;
+use validator::Validate;
 
 const CAR_CACHE_TTL: u64 = 60;
 
@@ -46,6 +47,7 @@ pub async fn view<R: CarRepository>(
 }
 
 pub async fn create<R: CarRepository>(repo: Arc<R>, new_car: &NewCar) -> Result<Car> {
+    new_car.validate()?;
     let car = repo.create(new_car).await?;
     Ok(car)
 }

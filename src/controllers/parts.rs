@@ -18,7 +18,7 @@ use super::auth::Claims;
     responses((status = OK, body = [Part])),
     tag = PARTS_TAG
 )]
-pub async fn index(
+pub async fn list(
     Query(conditions): Query<PartQuery>,
     Extension(repo): PartRepoExt,
 ) -> Result<AppJson<PartList>, AppError> {
@@ -36,7 +36,7 @@ pub async fn index(
         security(
             ("bearerAuth" = [])
         ),
-        request_body(content=String, content_type="application/json", description="New Part Information"),
+        request_body(content=NewPart, content_type="application/json", description="New Part Information"),
         responses(
             (status = 201, description = "Part item created successfully", body = Part)
         )

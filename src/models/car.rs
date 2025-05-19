@@ -16,7 +16,7 @@ pub type CarList = Vec<Car>;
 
 #[derive(Serialize, Deserialize, Debug, ToSchema, Validate)]
 pub struct NewCar {
-    #[validate(length(min = 1, max = 80))]
+    #[validate(length(min = 10, max = 80))]
     pub name: String,
     pub color: Option<String>,
     pub year: Option<i16>,

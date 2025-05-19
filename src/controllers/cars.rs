@@ -57,7 +57,6 @@ pub async fn search(
     tag = CARS_TAG
 )]
 pub async fn view(
-    _claims: Claims,
     Path(car_id): Path<i32>,
     Extension(repo): CarRepoExt,
     Extension(cache): CacheExt,

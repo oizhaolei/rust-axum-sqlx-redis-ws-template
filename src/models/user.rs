@@ -8,11 +8,9 @@ use validator::Validate;
 static USERNAME_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[0-9A-Za-z_]+$").unwrap());
 
 #[serde_with::serde_as]
-#[derive(Serialize, Deserialize, FromRow, Debug, ToSchema, Clone, Validate)]
+#[derive(Serialize, Deserialize, FromRow, Debug, ToSchema, Clone)]
 pub struct User {
-    #[validate(length(min = 3, max = 16),regex(path = *USERNAME_REGEX))]
     pub username: String,
-    #[validate(length(min = 8, max = 32))]
     pub password_hash: String,
 }
 
