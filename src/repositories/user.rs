@@ -51,7 +51,7 @@ impl UserRepository for UserRepositoryImpl {
             r#"
             INSERT INTO users (username, password_hash )
             VALUES ($1, $2)
-            RETURNING username, password_hash
+            RETURNING id, username, password_hash
             "#,
         )
         .bind(&user_data.username)
@@ -68,7 +68,7 @@ impl UserRepository for UserRepositoryImpl {
             UPDATE users
             SET password_hash = $1
             WHERE username = $2
-            RETURNING password_hash, username
+            RETURNING id, username, password_hash
             "#,
         )
         .bind(&user_data.username)
@@ -106,10 +106,12 @@ mod tests {
         };
         let expected_users = vec![
             User {
+                id: 1,
                 username: "Tesla Model S".to_string(),
                 password_hash: "None".to_string(),
             },
             User {
+                id: 2,
                 username: "Tesla Model 3".to_string(),
                 password_hash: "None".to_string(),
             },

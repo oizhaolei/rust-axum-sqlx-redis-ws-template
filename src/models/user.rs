@@ -10,6 +10,7 @@ static USERNAME_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[0-9A-Za-z_]+$")
 #[serde_with::serde_as]
 #[derive(Serialize, Deserialize, FromRow, Debug, ToSchema, Clone)]
 pub struct User {
+    pub id: i32,
     pub username: String,
     pub password_hash: String,
 }

@@ -1,5 +1,6 @@
 create table users
 (
-    username      text primary key not null,
+    id            SERIAL PRIMARY KEY,
+    username      text        not null,
     password_hash text        not null
 );

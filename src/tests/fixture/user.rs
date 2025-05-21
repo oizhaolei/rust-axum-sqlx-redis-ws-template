@@ -3,6 +3,7 @@ use crate::models::user::User;
 #[allow(dead_code)]
 pub fn user_fixture(id: usize) -> User {
     User {
+        id: id as i32,
         username: format!("ferrari {}", id),
         password_hash: String::from("black"),
     }
