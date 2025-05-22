@@ -85,7 +85,6 @@ fn user_routes() -> OpenApiRouter {
 fn car_routes() -> OpenApiRouter {
     OpenApiRouter::new()
         .routes(routes!(cars::list))
-        .routes(routes!(cars::search))
         .routes(routes!(cars::create))
         .routes(routes!(cars::view))
         .routes(routes!(cars::update))

@@ -1,4 +1,5 @@
 use crate::cache::CacheImpl;
+use crate::controllers::{CommonQuery, Pagination};
 use crate::models::car::{Car, CarList, CarQuery, NewCar};
 use crate::repositories::car::CarRepository;
 use anyhow::{Result, bail};
@@ -9,8 +10,13 @@ use validator::Validate;
 
 const CAR_CACHE_TTL: u64 = 60;
 
-pub async fn search<R: CarRepository>(repo: Arc<R>, conditions: &CarQuery) -> Result<CarList> {
-    let cars = repo.find_all(conditions).await?;
+pub async fn search<R: CarRepository>(
+    repo: Arc<R>,
+    conditions: &CarQuery,
+    query: &CommonQuery,
+    pagination: &Pagination,
+) -> Result<CarList> {
+    let cars = repo.find_all(conditions, query, pagination).await?;
     Ok(cars)
 }
 
@@ -98,9 +104,18 @@ mod tests {
         let mut mock_repo_impl = MockCarRepository::new();
         mock_repo_impl
             .expect_find_all()
-            .returning(|_| Ok(cars_fixture(5)));
+            .returning(|_, _, _| Ok(cars_fixture(5)));
         let conditions = CarQuery { name: None };
-        let cars = search(Arc::new(mock_repo_impl), &conditions).await.unwrap();
-        assert_eq!(cars.len(), 5);
+        let query = CommonQuery { ids: [].to_vec() };
+        let pagination = Pagination {
+            page: None,
+            per_page: None,
+            field: None,
+            order: None,
+        };
+        let cars = search(Arc::new(mock_repo_impl), &conditions, &query, &pagination)
+            .await
+            .unwrap();
+        assert_eq!(cars.data.len(), 5);
     }
 }

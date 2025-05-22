@@ -12,8 +12,6 @@ pub struct Car {
     pub year: Option<i16>,
 }
 
-pub type CarList = Vec<Car>;
-
 #[derive(Serialize, Deserialize, Debug, ToSchema, Validate)]
 pub struct NewCar {
     #[validate(length(min = 10, max = 80))]
@@ -25,4 +23,10 @@ pub struct NewCar {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct CarQuery {
     pub name: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CarList {
+    pub data: Vec<Car>,
+    pub total: i64,
 }

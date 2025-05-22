@@ -1,3 +1,4 @@
+use crate::controllers::{CommonQuery, Pagination};
 use crate::db::postgres::Db;
 use crate::models::car::{Car, CarList, CarQuery, NewCar};
 use anyhow::Result;
@@ -16,7 +17,12 @@ impl CarRepositoryImpl {
 #[automock]
 #[async_trait]
 pub trait CarRepository {
-    async fn find_all(&self, conditions: &CarQuery) -> Result<CarList>;
+    async fn find_all(
+        &self,
+        conditions: &CarQuery,
+        query: &CommonQuery,
+        pagination: &Pagination,
+    ) -> Result<CarList>;
     async fn create(&self, car_data: &NewCar) -> Result<Car>;
     async fn update(&self, car_data: &Car) -> Result<Car>;
     async fn delete(&self, car_id: i32) -> Result<u64>;
@@ -25,22 +31,69 @@ pub trait CarRepository {
 
 #[async_trait]
 impl CarRepository for CarRepositoryImpl {
-    async fn find_all(&self, conditions: &CarQuery) -> Result<CarList> {
-        let result = if let Some(name) = &conditions.name {
+    async fn find_all(
+        &self,
+        conditions: &CarQuery,
+        query: &CommonQuery,
+        pagination: &Pagination,
+    ) -> Result<CarList> {
+        let limit = pagination.per_page.unwrap_or(100);
+        let offset = (pagination.page.unwrap_or(1) - 1) * limit;
+
+        let data = if let Some(name) = &conditions.name {
             sqlx::query_as!(
                 Car,
-                "SELECT * FROM cars WHERE NAME LIKE $1",
-                format!("%{}%", name)
+                "SELECT * FROM cars WHERE NAME LIKE $1 LIMIT $2 OFFSET $3",
+                format!("%{}%", name),
+                limit as i32,
+                offset as i32,
+            )
+            .fetch_all(&*self.pool)
+            .await?
+        } else if !query.ids.is_empty() {
+            sqlx::query_as!(
+                Car,
+                "SELECT * FROM cars WHERE id IN (SELECT unnest($1::integer[])) LIMIT $2 OFFSET $3",
+                &query.ids,
+                limit as i32,
+                offset as i32,
             )
             .fetch_all(&*self.pool)
             .await?
         } else {
-            sqlx::query_as!(Car, "SELECT * FROM cars")
-                .fetch_all(&*self.pool)
+            sqlx::query_as!(
+                Car,
+                "SELECT * FROM cars LIMIT $1 OFFSET $2",
+                limit as i32,
+                offset as i32
+            )
+            .fetch_all(&*self.pool)
+            .await?
+        };
+        let total = if let Some(name) = &conditions.name {
+            sqlx::query_scalar!(
+                "SELECT COUNT(*) FROM cars WHERE NAME LIKE $1",
+                format!("%{}%", name),
+            )
+            .fetch_one(&*self.pool)
+            .await?
+            .unwrap()
+        } else if !query.ids.is_empty() {
+            sqlx::query_scalar!(
+                "SELECT COUNT(*) FROM cars WHERE id IN (SELECT unnest($1::integer[]))",
+                &query.ids,
+            )
+            .fetch_one(&*self.pool)
+            .await?
+            .unwrap()
+        } else {
+            sqlx::query_scalar!("SELECT COUNT(*) FROM cars")
+                .fetch_one(&*self.pool)
                 .await?
+                .unwrap()
         };
 
-        Ok(result)
+        Ok(CarList { data, total })
     }
 
     async fn create(&self, car_data: &NewCar) -> Result<Car> {
@@ -103,29 +156,43 @@ mod tests {
         let conditions = CarQuery {
             name: Some("Tesla".to_string()),
         };
-        let expected_cars = vec![
-            Car {
-                id: 1,
-                name: "Tesla Model S".to_string(),
-                color: None,
-                year: None,
-            },
-            Car {
-                id: 2,
-                name: "Tesla Model 3".to_string(),
-                color: None,
-                year: None,
-            },
-        ];
+        let query = CommonQuery { ids: [].to_vec() };
+        let pagination = Pagination {
+            page: None,
+            per_page: None,
+            field: None,
+            order: None,
+        };
+        let expected_cars = CarList {
+            data: vec![
+                Car {
+                    id: 1,
+                    name: "Tesla Model S".to_string(),
+                    color: None,
+                    year: None,
+                },
+                Car {
+                    id: 2,
+                    name: "Tesla Model 3".to_string(),
+                    color: None,
+                    year: None,
+                },
+            ],
+            total: 99,
+        };
 
         mock_repo
             .expect_find_all()
-            .with(predicate::eq(conditions.clone()))
+            .with(
+                predicate::eq(conditions.clone()),
+                predicate::eq(query.clone()),
+                predicate::eq(pagination.clone()),
+            )
             .times(1)
-            .returning(move |_| Ok(expected_cars.clone()));
+            .returning(move |_, _, _| Ok(expected_cars.clone()));
 
-        let result = mock_repo.find_all(&conditions).await;
+        let result = mock_repo.find_all(&conditions, &query, &pagination).await;
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().len(), 2);
+        assert_eq!(result.unwrap().data.len(), 2);
     }
 }

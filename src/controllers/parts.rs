@@ -7,9 +7,10 @@ use crate::services;
 use axum::extract::{Path, Query};
 use axum::{Json, extract::Extension};
 
+use super::Pagination;
 use super::auth::Claims;
 
-/// List all available Parts
+/// List Parts
 ///
 /// Tries to all Parts from the database.
 #[utoipa::path(
@@ -20,8 +21,10 @@ use super::auth::Claims;
 )]
 pub async fn list(
     Query(conditions): Query<PartQuery>,
+    pagination: Query<Pagination>,
     Extension(repo): PartRepoExt,
 ) -> Result<AppJson<PartList>, AppError> {
+    println!("params: {:?}", pagination);
     let parts = services::parts::search(repo.clone(), &conditions).await?;
     Ok(AppJson(parts))
 }

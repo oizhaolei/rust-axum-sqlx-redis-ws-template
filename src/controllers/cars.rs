@@ -6,47 +6,43 @@ use crate::router::CARS_TAG;
 use crate::services;
 use axum::{
     Json,
-    extract::{Extension, Path, Query},
+    extract::{Extension, Path},
 };
+use axum_extra::extract::Query;
 
 use super::auth::Claims;
+use super::{CommonQuery, Pagination};
 
-/// List all available Cars
+/// List Cars
 ///
 /// Tries to all Cars from the database.
 #[utoipa::path(
     get,
     path = "/list",
+    params(
+        ("name" = inline(Option<String>), Query, description="Car Name"),
+        ("ids" = inline(Option<String>), Query, description="ids"),
+        ("page" = inline(Option<usize>), Query, description="Page"),
+        ("perPage" = inline(Option<usize>), Query, description="PerPage"),
+        ("field" = inline(Option<String>), Query, description="Field"),
+        ("order" = inline(Option<String>), Query, description="Order")
+    ) ,
     responses((status = OK, body = [Car])),
     tag = CARS_TAG
 )]
 pub async fn list(
     Query(conditions): Query<CarQuery>,
+    Query(query): Query<CommonQuery>,
+    Query(pagination): Query<Pagination>,
     Extension(repo): CarRepoExt,
 ) -> Result<AppJson<CarList>, AppError> {
-    let cars = services::cars::search(repo.clone(), &conditions).await?;
+    println!("list params: {:?}", pagination);
+    println!("conditions: {:?}", conditions);
+    println!("ids: {:?}", query);
+    let cars = services::cars::search(repo.clone(), &conditions, &query, &pagination).await?;
     Ok(AppJson(cars))
 }
 
-/// Search all cars
-///
-/// Tries to get list of cars by query from the database
-#[utoipa::path(
-    get,
-    path = "/search",
-    params(("name" = String, Query, description="Car Name")),
-    responses((status = OK, body = [Car])),
-    tag = CARS_TAG
-)]
-pub async fn search(
-    Query(params): Query<CarQuery>,
-    Extension(repo): CarRepoExt,
-) -> Result<AppJson<CarList>, AppError> {
-    let cars = services::cars::search(repo.clone(), &params).await?;
-    Ok(AppJson(cars))
-}
-
-/// Get single Car by id
 ///
 /// Tries to get single car by id from the database
 #[utoipa::path(
@@ -207,8 +203,8 @@ mod tests {
             .expect("Failed to read body");
         let cars: CarList =
             serde_json::from_slice(&response_body).expect("Failed to deserialize response");
-        assert_eq!(cars[0].name, "Tesla");
-        assert_eq!(cars[0].color, Some("Red".to_string()));
-        assert_eq!(cars[0].year, Some(2020));
+        assert_eq!(cars.data[0].name, "Tesla");
+        assert_eq!(cars.data[0].color, Some("Red".to_string()));
+        assert_eq!(cars.data[0].year, Some(2020));
     }
 }

@@ -8,9 +8,10 @@ use axum::{
     extract::{Extension, Path, Query},
 };
 
+use super::Pagination;
 use super::auth::Claims;
 
-/// List all available Users
+/// List Users
 ///
 /// Tries to all Users from the database.
 #[utoipa::path(
@@ -25,8 +26,10 @@ use super::auth::Claims;
 pub async fn list(
     _claims: Claims,
     Query(conditions): Query<UserQuery>,
+    pagination: Query<Pagination>,
     Extension(repo): UserRepoExt,
 ) -> Result<AppJson<UserList>, AppError> {
+    println!("params: {:?}", pagination);
     let users = services::users::search(repo.clone(), &conditions).await?;
     Ok(AppJson(users))
 }
