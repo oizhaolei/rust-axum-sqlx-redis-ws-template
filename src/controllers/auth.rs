@@ -1,5 +1,5 @@
 use crate::error::{AppError, AppJson};
-use crate::models::user::UserAuth;
+use crate::models::user::{User, UserAuth};
 use crate::repositories::UserRepoExt;
 use crate::router::AUTH_TAG;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
@@ -28,25 +28,24 @@ static KEYS: LazyLock<Keys> = LazyLock::new(|| {
     Keys::new(secret.as_bytes())
 });
 
-/// Test Auth
+/// Account profile
 ///
-/// Tries to login via a User in the database.
+/// Current user profile
 #[utoipa::path(
     post,
-    path = "/test",
+    path = "/profile",
     tag = AUTH_TAG,
     security(
         ("bearerAuth" = [])
     ),
-    responses(
-        (status = 200, description = "User login successfully", body = String)
-    )
+    responses((status = OK, body = User)),
 )]
-pub async fn test(claims: Claims) -> Result<String, AppError> {
-    // Send the protected data to the user
-    Ok(format!(
-        "Welcome to the protected area :)\nYour data:\n{claims}",
-    ))
+pub async fn profile(claims: Claims,
+    Extension(repo): UserRepoExt,
+ ) -> Result<AppJson<User>, AppError> {
+    let username = claims.sub;
+    let user = services::users::view(repo.clone(), &username).await?;
+    Ok(AppJson(user))
 }
 
 /// Authorize with username and password

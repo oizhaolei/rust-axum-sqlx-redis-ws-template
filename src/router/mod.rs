@@ -102,5 +102,5 @@ fn part_routes() -> OpenApiRouter {
 fn auth_routes() -> OpenApiRouter {
     OpenApiRouter::new()
         .routes(routes!(auth::authorize))
-        .routes(routes!(auth::test))
+        .routes(routes!(auth::profile))
 }
