@@ -5,11 +5,12 @@ use crate::router::USERS_TAG;
 use crate::services;
 use axum::{
     Json,
-    extract::{Extension, Path, Query},
+    extract::{Extension, Path},
 };
+use axum_extra::extract::Query;
 
-use super::Pagination;
 use super::auth::Claims;
+use super::{CommonQuery, Pagination};
 
 /// List Users
 ///
@@ -17,42 +18,27 @@ use super::auth::Claims;
 #[utoipa::path(
     get,
     path = "/list",
-    responses((status = OK, body = [User])),
-    security(
-        ("bearerAuth" = [])
-    ),
+    params(
+        ("name" = inline(Option<String>), Query, description="User Name"),
+        ("ids" = inline(Option<String>), Query, description="ids"),
+        ("page" = inline(Option<usize>), Query, description="Page"),
+        ("perPage" = inline(Option<usize>), Query, description="PerPage"),
+        ("field" = inline(Option<String>), Query, description="Field"),
+        ("order" = inline(Option<String>), Query, description="Order")
+    ) ,
+    responses((status = OK, body = UserList)),
     tag = USERS_TAG
 )]
 pub async fn list(
-    _claims: Claims,
     Query(conditions): Query<UserQuery>,
-    pagination: Query<Pagination>,
+    Query(query): Query<CommonQuery>,
+    Query(pagination): Query<Pagination>,
     Extension(repo): UserRepoExt,
 ) -> Result<AppJson<UserList>, AppError> {
-    println!("params: {:?}", pagination);
-    let users = services::users::search(repo.clone(), &conditions).await?;
-    Ok(AppJson(users))
-}
-
-/// Search all users
-///
-/// Tries to get list of users by query from the database
-#[utoipa::path(
-    get,
-    path = "/search",
-    params(("username" = String, Query, description="User Name")),
-    responses((status = OK, body = [User])),
-    security(
-        ("bearerAuth" = [])
-    ),
-    tag = USERS_TAG
-)]
-pub async fn search(
-    _claims: Claims,
-    Query(params): Query<UserQuery>,
-    Extension(repo): UserRepoExt,
-) -> Result<AppJson<UserList>, AppError> {
-    let users = services::users::search(repo.clone(), &params).await?;
+    println!("list params: {:?}", pagination);
+    println!("conditions: {:?}", conditions);
+    println!("ids: {:?}", query);
+    let users = services::users::find_all(repo.clone(), &conditions, &query, &pagination).await?;
     Ok(AppJson(users))
 }
 
@@ -63,7 +49,7 @@ pub async fn search(
     get,
     path = "/{username}",
     params(("username" =&str, Path, description="User Id")),
-    responses((status = OK, body = [User])),
+    responses((status = OK, body = User)),
     security(
         ("bearerAuth" = [])
     ),
@@ -217,7 +203,7 @@ mod tests {
             .expect("Failed to read body");
         let users: UserList =
             serde_json::from_slice(&response_body).expect("Failed to deserialize response");
-        assert_eq!(users[0].username, "Tesla");
-        assert_eq!(users[0].password_hash, "Red".to_string());
+        assert_eq!(users.data[0].username, "Tesla");
+        assert_eq!(users.data[0].password_hash, "Red".to_string());
     }
 }

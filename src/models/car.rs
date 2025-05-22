@@ -25,7 +25,7 @@ pub struct CarQuery {
     pub name: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct CarList {
     pub data: Vec<Car>,
     pub total: i64,

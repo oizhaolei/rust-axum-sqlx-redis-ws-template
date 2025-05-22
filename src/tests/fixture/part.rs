@@ -1,4 +1,4 @@
-use crate::models::part::Part;
+use crate::models::part::{Part, PartList};
 
 #[allow(dead_code)]
 pub fn part_fixture(id: usize) -> Part {
@@ -10,10 +10,13 @@ pub fn part_fixture(id: usize) -> Part {
 }
 
 #[allow(dead_code)]
-pub fn parts_fixture(num: usize) -> Vec<Part> {
+pub fn parts_fixture(num: usize) -> PartList {
     let mut parts = vec![];
     for i in 1..num + 1 {
         parts.push(part_fixture(i));
     }
-    parts
+    PartList {
+        data: parts,
+        total: (num * 9) as i64,
+    }
 }

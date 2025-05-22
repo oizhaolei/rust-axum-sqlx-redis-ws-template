@@ -1,16 +1,15 @@
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use utoipa::ToSchema;
 use validator::Validate;
 
 #[serde_with::serde_as]
-#[derive(Serialize, Deserialize, sqlx::FromRow, Debug, ToSchema)]
+#[derive(Serialize, Deserialize, FromRow, Debug, ToSchema, Clone)]
 pub struct Part {
     pub id: i32,
     pub car_id: Option<i32>,
     pub name: String,
 }
-
-pub type PartList = Vec<Part>;
 
 #[derive(Serialize, Deserialize, Debug, ToSchema, Validate)]
 pub struct NewPart {
@@ -19,7 +18,13 @@ pub struct NewPart {
     pub name: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct PartQuery {
     pub name: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
+pub struct PartList {
+    pub data: Vec<Part>,
+    pub total: i64,
 }

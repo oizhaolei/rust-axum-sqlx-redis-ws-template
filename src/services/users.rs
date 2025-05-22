@@ -1,3 +1,4 @@
+use crate::controllers::{CommonQuery, Pagination};
 use crate::models::user::{User, UserAuth, UserList, UserQuery};
 use crate::repositories::user::UserRepository;
 use anyhow::{Result, bail};
@@ -5,8 +6,13 @@ use std::sync::Arc;
 use tracing::info;
 use validator::Validate;
 
-pub async fn search<R: UserRepository>(repo: Arc<R>, conditions: &UserQuery) -> Result<UserList> {
-    let users = repo.find_all(conditions).await?;
+pub async fn find_all<R: UserRepository>(
+    repo: Arc<R>,
+    conditions: &UserQuery,
+    query: &CommonQuery,
+    pagination: &Pagination,
+) -> Result<UserList> {
+    let users = repo.find_all(conditions, query, pagination).await?;
     Ok(users)
 }
 
@@ -63,13 +69,22 @@ mod tests {
     use crate::tests::fixture::user::users_fixture;
 
     #[tokio::test]
-    async fn test_search() {
+    async fn test_find_all() {
         let mut mock_repo_impl = MockUserRepository::new();
         mock_repo_impl
             .expect_find_all()
-            .returning(|_| Ok(users_fixture(5)));
+            .returning(|_, _, _| Ok(users_fixture(5)));
         let conditions = UserQuery { username: None };
-        let users = search(Arc::new(mock_repo_impl), &conditions).await.unwrap();
-        assert_eq!(users.len(), 5);
+        let query = CommonQuery { ids: [].to_vec() };
+        let pagination = Pagination {
+            page: None,
+            per_page: None,
+            field: None,
+            order: None,
+        };
+        let users = find_all(Arc::new(mock_repo_impl), &conditions, &query, &pagination)
+            .await
+            .unwrap();
+        assert_eq!(users.data.len(), 5);
     }
 }

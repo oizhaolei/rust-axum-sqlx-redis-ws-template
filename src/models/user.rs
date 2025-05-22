@@ -15,8 +15,6 @@ pub struct User {
     pub password_hash: String,
 }
 
-pub type UserList = Vec<User>;
-
 #[derive(Serialize, Deserialize, Debug, ToSchema, Validate)]
 pub struct UserAuth {
     #[validate(length(min = 3, max = 16),regex(path = *USERNAME_REGEX))]
@@ -28,4 +26,10 @@ pub struct UserAuth {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct UserQuery {
     pub username: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
+pub struct UserList {
+    pub data: Vec<User>,
+    pub total: i64,
 }

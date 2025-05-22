@@ -27,7 +27,7 @@ use super::{CommonQuery, Pagination};
         ("field" = inline(Option<String>), Query, description="Field"),
         ("order" = inline(Option<String>), Query, description="Order")
     ) ,
-    responses((status = OK, body = [Car])),
+    responses((status = OK, body = CarList)),
     tag = CARS_TAG
 )]
 pub async fn list(
@@ -39,7 +39,7 @@ pub async fn list(
     println!("list params: {:?}", pagination);
     println!("conditions: {:?}", conditions);
     println!("ids: {:?}", query);
-    let cars = services::cars::search(repo.clone(), &conditions, &query, &pagination).await?;
+    let cars = services::cars::find_all(repo.clone(), &conditions, &query, &pagination).await?;
     Ok(AppJson(cars))
 }
 
@@ -49,7 +49,7 @@ pub async fn list(
     get,
     path = "/{car_id}",
     params(("car_id" = i32, Path, description="Car Id")),
-    responses((status = OK, body = [Car])),
+    responses((status = OK, body = Car)),
     tag = CARS_TAG
 )]
 pub async fn view(
@@ -117,10 +117,10 @@ pub async fn update(
         delete,
         path = "/delete/{car_id}",
         params(("car_id" = i32, Path, description="Car Id")),
-        tag = CARS_TAG,
         security(
             ("bearerAuth" = [])
         ),
+        tag = CARS_TAG,
         responses(
             (status = 200, description = "Car item deleted successfully", body = String)
         )

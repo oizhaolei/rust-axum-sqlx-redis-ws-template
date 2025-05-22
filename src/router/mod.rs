@@ -2,11 +2,11 @@ use crate::controllers::{auth, cars, parts, users, utils};
 use axum::Router;
 use tower_http::services::ServeDir;
 use tower_http::services::ServeFile;
-use utoipa::Modify;
-use utoipa::OpenApi;
 use utoipa::openapi::security::Http;
 use utoipa::openapi::security::HttpAuthScheme;
 use utoipa::openapi::security::SecurityScheme;
+use utoipa::Modify;
+use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 use utoipa_rapidoc::RapiDoc;
@@ -75,7 +75,6 @@ pub fn router() -> Router {
 fn user_routes() -> OpenApiRouter {
     OpenApiRouter::new()
         .routes(routes!(users::list))
-        .routes(routes!(users::search))
         .routes(routes!(users::create))
         .routes(routes!(users::view))
         .routes(routes!(users::update))
@@ -94,7 +93,6 @@ fn car_routes() -> OpenApiRouter {
 fn part_routes() -> OpenApiRouter {
     OpenApiRouter::new()
         .routes(routes!(parts::list))
-        .routes(routes!(parts::search))
         .routes(routes!(parts::create))
         .routes(routes!(parts::view))
         .routes(routes!(parts::update))

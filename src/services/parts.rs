@@ -1,4 +1,5 @@
 use crate::cache::CacheImpl;
+use crate::controllers::{CommonQuery, Pagination};
 use crate::models::part::{NewPart, Part, PartList, PartQuery};
 use crate::repositories::part::PartRepository;
 use anyhow::{Result, bail};
@@ -11,8 +12,13 @@ use validator::Validate;
 
 const PART_CACHE_TTL: u64 = 60;
 
-pub async fn search<R: PartRepository>(repo: Arc<R>, conditions: &PartQuery) -> Result<PartList> {
-    let parts = repo.find_all(conditions).await?;
+pub async fn find_all<R: PartRepository>(
+    repo: Arc<R>,
+    conditions: &PartQuery,
+    query: &CommonQuery,
+    pagination: &Pagination,
+) -> Result<PartList> {
+    let parts = repo.find_all(conditions, query, pagination).await?;
     Ok(parts)
 }
 
@@ -96,13 +102,22 @@ mod tests {
     use crate::tests::fixture::part::parts_fixture;
 
     #[tokio::test]
-    async fn test_search() {
+    async fn test_find_all() {
         let mut mock_repo_impl = MockPartRepository::new();
         mock_repo_impl
             .expect_find_all()
-            .returning(|_| Ok(parts_fixture(5)));
+            .returning(|_, _, _| Ok(parts_fixture(5)));
         let conditions = PartQuery { name: None };
-        let parts = search(Arc::new(mock_repo_impl), &conditions).await.unwrap();
-        assert_eq!(parts.len(), 5);
+        let query = CommonQuery { ids: [].to_vec() };
+        let pagination = Pagination {
+            page: None,
+            per_page: None,
+            field: None,
+            order: None,
+        };
+        let parts = find_all(Arc::new(mock_repo_impl), &conditions, &query, &pagination)
+            .await
+            .unwrap();
+        assert_eq!(parts.data.len(), 5);
     }
 }

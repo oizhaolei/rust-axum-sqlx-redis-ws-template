@@ -10,7 +10,7 @@ use validator::Validate;
 
 const CAR_CACHE_TTL: u64 = 60;
 
-pub async fn search<R: CarRepository>(
+pub async fn find_all<R: CarRepository>(
     repo: Arc<R>,
     conditions: &CarQuery,
     query: &CommonQuery,
@@ -100,7 +100,7 @@ mod tests {
     use crate::tests::fixture::car::cars_fixture;
 
     #[tokio::test]
-    async fn test_search() {
+    async fn test_find_all() {
         let mut mock_repo_impl = MockCarRepository::new();
         mock_repo_impl
             .expect_find_all()
@@ -113,7 +113,7 @@ mod tests {
             field: None,
             order: None,
         };
-        let cars = search(Arc::new(mock_repo_impl), &conditions, &query, &pagination)
+        let cars = find_all(Arc::new(mock_repo_impl), &conditions, &query, &pagination)
             .await
             .unwrap();
         assert_eq!(cars.data.len(), 5);
